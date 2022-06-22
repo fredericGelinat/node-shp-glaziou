@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 const productRoutes = require("./api/routes/products");
 const orderRoutes = require("./api/routes/orders");
 
-
+const userRoutes = require("./api/routes/user")
 
 
 mongoose.connect('mongodb://node-shop-glaziou:' + process.env.MONGO_ATLAS_PW + '@ac-aaxcwxv-shard-00-00.vlptrph.mongodb.net:27017,ac-aaxcwxv-shard-00-01.vlptrph.mongodb.net:27017,ac-aaxcwxv-shard-00-02.vlptrph.mongodb.net:27017/?ssl=true&replicaSet=atlas-nzcew2-shard-0&authSource=admin&retryWrites=true&w=majority');
@@ -35,6 +35,8 @@ app.use((req, res, next) => {
 
 app.use("/products", productRoutes);
 app.use("/orders", orderRoutes);
+app.use("/user", userRoutes);
+
 
 app.use((req, res, next) => {
   const error = new Error("not found");

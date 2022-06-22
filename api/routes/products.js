@@ -3,14 +3,14 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const multer = require("multer");
 const { replaceOne } = require("../models/product");
-
+const checkAuth = require('../middleware/check-auth')
 const storage = multer.diskStorage({
-    destination: function(req, file, cb) {
-        cb(null, './uploads/');
-    },
-    filename: function(req, file, cb) {
-        cb(null, Date.now() + file.originalname);
-    }
+  destination: function (req, file, cb) {
+    cb(null, "./uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + file.originalname);
+  },
 });
 const upload = multer({ storage: storage });
 
@@ -18,46 +18,56 @@ const Product = require("../models/product");
 
 router.get("/", (req, res, next) => {
   Product.find()
-    .select("name price _id productImage")
-    .exec()
-    .then((docs) => {
-      const response = {
-        count: docs.length,
-        products: docs.map((doc) => {
-          return {
-            name: doc.name,
+    .select("name price _id image album colors categorie description livraison")
+      .exec()
+      .then((docs) => {
+        const response = {
+          count: docs.length,
+          products: docs.map((doc) => {
+            return {
+              name: doc.name,
               price: doc.price,
-            productImage: doc.productImage,
-            _id: doc._id,
-            request: {
-              type: "GET",
-              url: "http://localhost:3100/products/" + doc._id,
-            },
-          };
-        }),
-      };
-      // if (doc.length >= 0) {
-      res.status(200).json(response);
+              image: doc.image,
+              _id: doc._id,
+              album: doc.album,
+              colors: doc.colors,
+              categorie: doc.categorie,
+              description: doc.description,
+              livraison: doc.livraison,
+              request: {
+                type: "GET",
+                url: "http://localhost:3100/products/" + doc._id,
+              },
+            };
+          }),
+        };
+        // if (doc.length >= 0) {
+        res.status(200).json(response);
 
-      // } else {
-      //     res.status(404).json({
-      //         message: 'no entries found'
-      //     });
-      // }
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({
-        error: err,
+        // } else {
+        //     res.status(404).json({
+        //         message: 'no entries found'
+        //     });
+        // }
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(500).json({
+          error: err,
+        });
       });
-    });
 });
-router.post("/", upload.single('productImage'), (req, res, next) => {
+router.post("/", checkAuth, upload.single("image"), (req, res, next) => {
   const product = new Product({
     _id: new mongoose.Types.ObjectId(),
     name: req.body.name,
-      price: req.body.price,
-    productImage: req.file.path
+    price: req.body.price,
+    image: req.file.path,
+    album: req.body.album,
+    colors: req.body.colors,
+    categorie: req.body.categorie,
+    description: req.body.description,
+    livraison: req.body.livraison
   });
   product
     .save()
@@ -69,6 +79,12 @@ router.post("/", upload.single('productImage'), (req, res, next) => {
           name: result.name,
           price: result.price,
           _id: result._id,
+          colors: result.colors,
+          album: result.album,
+          description: result.description,
+          categorie: result.categorie,
+          livraison: result.livraison,
+          image: result.image,
           request: {
             type: "GET",
             url: "http://localhost:3100/products/" + result._id,
@@ -87,7 +103,7 @@ router.post("/", upload.single('productImage'), (req, res, next) => {
 router.get("/:productId", (req, res, next) => {
   const id = req.params.productId;
   Product.findById(id)
-    .select("name price _id productImage")
+    .select("name price _id image album colors categorie description livraison")
     .exec()
     .then((doc) => {
       console.log("From database", doc);
@@ -112,7 +128,7 @@ router.get("/:productId", (req, res, next) => {
     });
 });
 
-router.patch("/:productId", (req, res, next) => {
+router.patch("/:productId", checkAuth, (req, res, next) => {
   const id = req.params.productId;
   const updateOps = {};
   for (const ops of req.body) {
@@ -142,7 +158,7 @@ router.patch("/:productId", (req, res, next) => {
       });
     });
 });
-router.delete("/:productId", (req, res, next) => {
+router.delete("/:productId", checkAuth, (req, res, next) => {
   const id = req.params.productId;
   Product.remove({
     _id: id,
